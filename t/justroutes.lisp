@@ -29,7 +29,20 @@
                       #'(lambda (env)
                           (declare (ignore env))
                           '(200 (:content-type "text/plain")
-                            ("every user")))))))
+                            ("every user"))))
+                (list :GET "/user/:id/"
+                      #'(lambda (env)
+                          (list 200 (list :content-type "text/plain")
+                                (list (format nil "user ~a"
+                                              (getf (getf env :uri-params) :id))))))
+                (list :GET "/user/:id/:location/"
+                      #'(lambda (env)
+                          (let ((p (getf env :uri-params)))
+                            (print p)
+                            (list 200 (list :content-type "text/plain")
+                                  (list (format nil "user ~a ~a"
+                                                (getf p :id)
+                                                (getf p :location))))))))))
 
 (plan :basic-routing)
 
@@ -56,6 +69,22 @@
 (is (funcall simple-resolver (list :request-uri "/user/"
                                    :request-method :head))
     '(200 (:content-type "text/plain") ("every user")))
+
+(is (funcall simple-resolver (list :request-uri "/user/12/"
+                                   :request-method :get))
+    '(200 (:content-type "text/plain") ("user 12")))
+
+(is (funcall simple-resolver (list :request-uri "/user/12/india/"
+                                   :request-method :get))
+    '(200 (:content-type "text/plain") ("user 12 india")))
+
+(is (funcall simple-resolver (list :request-uri "/user/12/"
+                                   :request-method :post))
+    '(404 (:content-type "text/plain") ("not found")))
+
+(is (funcall simple-resolver (list :request-uri "/user/12/jks/283/"
+                                   :request-method :post))
+    '(404 (:content-type "text/plain") ("not found")))
 
 (finalize)
 

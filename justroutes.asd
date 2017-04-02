@@ -11,7 +11,8 @@
   :version "0.1"
   :author ""
   :license ""
-  :depends-on ()
+  :depends-on (:alexandria
+               :cl-ppcre)
   :components ((:module "src"
                 :components
                 ((:file "justroutes"))))
