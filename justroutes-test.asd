@@ -11,6 +11,8 @@
   :author ""
   :license ""
   :depends-on (:justroutes
+               :clack
+               :drakma
                :prove)
   :components ((:module "t"
                 :components

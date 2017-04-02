@@ -1,28 +1,39 @@
 (in-package :cl-user)
 (defpackage justroutes
-  (:use :cl :clack.request))
+  (:use :cl)
+  (:export make-resolver
+           make-router
+           make-clack-handler))
 (in-package :justroutes)
 
 (defun mprint (&rest args)
+  "Print function similar to the one found in python/clojure"
   (format t "~{~a ~}" args))
 
 (defun make-route (method path handler &key (type :function) (meta nil))
-  (mprint method path handler type meta)
-  (list (cons :method method) (cons :path path) (cons :handler handler)
-        (cons :type type) (cons :meta meta)))
+  (list :method method :path path :handler handler
+        :type type :meta meta))
 
-(defun resolve-route (route-table env)
-  (declaim (optimize (debug 3)))
-  (let* ((r (cdr (assoc (getf env :request-uri) route-table :test #'equal)))
-         (h (cdr (assoc :handler r))))
-    (funcall h env)))
+(defun make-resolver (route-table)
+  (lambda (env)
+    (let* ((r-uri (getf env :request-uri))
+           (r-method (getf env :REQUEST-METHOD))
+           (route (loop for r in route-table
+                     do (when (and (equal (getf r :path) r-uri)
+                                   (or (equal (getf r :method) :ALL)
+                                       (equal (getf r :method) r-method)))
+                          (return r)))))
+      (if route
+          (funcall (getf route :handler) env)
+          '(404 (:content-type "text/plain")
+            ("not found"))))))
+
+(defun make-router (routes)
+  (make-resolver (reduce
+                  #'(lambda (acc item)
+                      (let* ((r (apply #'make-route item)))
+                        (cons r acc)))
+                  routes :initial-value nil)))
 
 (defun make-clack-handler (routes)
-  (let ((route-table (reduce
-                     #'(lambda (acc item)
-                         (let* ((r (apply #'make-route item))
-                                (path (cdr (assoc :path r))))
-                           (acons path r acc)))
-                      routes :initial-value nil)))
-    (lambda (env)
-      (resolve-route route-table env))))
+  (make-router routes))
