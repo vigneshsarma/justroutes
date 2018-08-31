@@ -31,18 +31,39 @@
                           '(200 (:content-type "text/plain")
                             ("every user"))))
                 (list :GET "/user/:id/"
-                      #'(lambda (env)
+                      (lambda (env)
                           (list 200 (list :content-type "text/plain")
                                 (list (format nil "user ~a"
                                               (getf (getf env :uri-params) :id))))))
                 (list :GET "/user/:id/:location/"
-                      #'(lambda (env)
+                      (lambda (env)
                           (let ((p (getf env :uri-params)))
                             (print p)
                             (list 200 (list :content-type "text/plain")
                                   (list (format nil "user ~a ~a"
                                                 (getf p :id)
                                                 (getf p :location))))))))))
+
+(defparameter nested-resolver
+  (make-router (list
+                (list :ALL "/repo/:name/"
+                      (list
+                       (list :GET "/comments/"
+                             (lambda (env)
+                               '(200 (:content-type "text/plain")
+                                 ("repo comments"))))
+                       (list :GET "/comments/:id/"
+                             (lambda (env)
+                               '(200 (:content-type "text/plain")
+                                 ("repo comments id"))))
+                       (list :GET "/issues/"
+                             (lambda (env)
+                               '(200 (:content-type "text/plain")
+                                 ("repo issues"))))
+                       (list :GET "/issues/:id/"
+                             (lambda (env)
+                               '(200 (:content-type "text/plain")
+                                 ("repo issues id")))))))))
 
 (plan :basic-routing)
 
